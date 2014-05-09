@@ -1,0 +1,27 @@
+{
+  "name": "slk",
+  "version": "0.0.0",
+  "description": "commandline power tool for slack",
+  "bin": "bin/slk",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/roylines/slk.git"
+  },
+  "keywords": [
+    "slack"
+  ],
+  "author": "Roy Lines",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/roylines/slk/issues"
+  },
+  "homepage": "https://github.com/roylines/slk",
+  "dependencies": {
+    "minimist": "0.0.9",
+    "request": "^2.34.0",
+    "lodash": "^2.4.1",
+  }
+}

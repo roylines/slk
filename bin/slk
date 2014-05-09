@@ -1,0 +1,47 @@
+#!/usr/bin/env node
+
+'use strict';
+
+var _ = require('lodash'),
+  request = require('request');
+
+process.title = 'slk';
+
+var argv = require('minimist')(process.argv.slice(2));
+
+if (!argv.token) {
+  console.log('missing --token');
+  return process.exit(1);
+}
+
+var history = function(token, channel, latest) {
+  var url = 'https://slack.com/api/channels.history?token=' + token + '&channel=' + channel;
+  if (latest) {
+    url = url + '&latest=' + latest;
+  }
+
+  request(url, function(error, response, body) {
+    if (error) {
+      console.error(error);
+      return process.exit(1);
+    }
+
+    var results = JSON.parse(body);
+
+    var sorted = _.sortBy(results.messages, function(m) {
+      return parseFloat(m.ts);
+    });
+
+    _.each(sorted, function(m) {
+      console.log(m);
+      console.log(m.user + ': ' + m.text);
+    });
+  })
+}
+
+
+if (argv._[0] === 'history' && argv.channel) {
+  return history(argv.token, argv.channel);
+}
+
+return process.exit(0)

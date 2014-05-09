@@ -1,6 +1,6 @@
 {
   "name": "slk",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "commandline power tool for slack",
   "bin": "bin/slk",
   "scripts": {
@@ -21,7 +21,8 @@
   "homepage": "https://github.com/roylines/slk",
   "dependencies": {
     "minimist": "0.0.9",
-    "request": "^2.34.0",
-    "lodash": "^2.4.1"
+    "request": "2.34.0",
+    "lodash": "2.4.1",
+    "colors": "^0.6.2"
   }
 }

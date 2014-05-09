@@ -3,6 +3,7 @@
 'use strict';
 
 var _ = require('lodash'),
+    colors = require('colors'),
   request = require('request');
 
 process.title = 'slk';
@@ -14,34 +15,52 @@ if (!argv.token) {
   return process.exit(1);
 }
 
-var history = function(token, channel, latest) {
-  var url = 'https://slack.com/api/channels.history?token=' + token + '&channel=' + channel;
-  if (latest) {
-    url = url + '&latest=' + latest;
-  }
+var api = function(method, token, details, done) {
+  var query = _.reduce(_.keys(details), function(accum, key) {
+    return accum + '&' + key + '=' + details[key];
+  }, '');
 
-  request(url, function(error, response, body) {
-    if (error) {
-      console.error(error);
-      return process.exit(1);
+  var url = 'https://slack.com/api/' + method + '?token=' + token + query;
+  return request(url, function(e, r, b) {
+    if (e) {
+      return done(e);
     }
 
-    var results = JSON.parse(body);
+    return done(null, JSON.parse(b));
+  });
+}
 
+var channelsHistory = function(token, channel, oldest) {
+  var details = {
+    channel: channel
+  }
+  if (oldest) {
+    details.oldest = oldest;
+  }
+
+  return api('channels.history', token, details, function(e, results) {
+    if (e) {
+      console.error(e);
+      process.exit(1);
+    }
     var sorted = _.sortBy(results.messages, function(m) {
       return parseFloat(m.ts);
     });
-
+  
+    var latest = oldest; 
     _.each(sorted, function(m) {
-      console.log(m);
-      console.log(m.user + ': ' + m.text);
+      latest = parseFloat(m.ts);
+      console.log((m.username || m.user).green, m.text, ('(' + m.ts + ')').grey);
     });
-  })
+
+    return setTimeout(function() {
+      return channelsHistory(token, channel, latest);
+    }, 30000);
+  });
+};
+
+if (argv._[0] === 'follow' && argv.channel) {
+  return channelsHistory(argv.token, argv.channel);
 }
 
-
-if (argv._[0] === 'history' && argv.channel) {
-  return history(argv.token, argv.channel);
-}
-
-return process.exit(0)
+return process.exit(0);

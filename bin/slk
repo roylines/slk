@@ -3,8 +3,8 @@
 'use strict';
 
 var _ = require('lodash'),
-    colors = require('colors'),
-  request = require('request');
+    api = require('../lib/api'),
+    colors = require('colors');
 
 process.title = 'slk';
 
@@ -15,30 +15,8 @@ if (!argv.token) {
   return process.exit(1);
 }
 
-var api = function(method, token, details, done) {
-  var query = _.reduce(_.keys(details), function(accum, key) {
-    return accum + '&' + key + '=' + details[key];
-  }, '');
-
-  var url = 'https://slack.com/api/' + method + '?token=' + token + query;
-  return request(url, function(e, r, b) {
-    if (e) {
-      return done(e);
-    }
-
-    return done(null, JSON.parse(b));
-  });
-}
-
-var channelsHistory = function(token, channel, oldest) {
-  var details = {
-    channel: channel
-  }
-  if (oldest) {
-    details.oldest = oldest;
-  }
-
-  return api('channels.history', token, details, function(e, results) {
+var listen = function(token, channel, oldest) {
+  return api.channelsHistory(token, channel, oldest, function(e, results) {
     if (e) {
       console.error(e);
       process.exit(1);
@@ -54,13 +32,13 @@ var channelsHistory = function(token, channel, oldest) {
     });
 
     return setTimeout(function() {
-      return channelsHistory(token, channel, latest);
+      return listen(token, channel, latest);
     }, 30000);
   });
 };
 
-if (argv._[0] === 'follow' && argv.channel) {
-  return channelsHistory(argv.token, argv.channel);
+if (argv._[0] === 'listen' && argv.channel) {
+  return listen(argv.token, argv.channel);
 }
 
 return process.exit(0);

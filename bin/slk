@@ -3,20 +3,15 @@
 'use strict';
 
 var _ = require('lodash'),
-    api = require('../lib/api'),
-    colors = require('colors');
+  program = require('commander'),
+  api = require('../lib/api'),
+  colors = require('colors');
 
 process.title = 'slk';
 
-var argv = require('minimist')(process.argv.slice(2));
-
-if (!argv.token) {
-  console.log('missing --token');
-  return process.exit(1);
-}
-
-var listen = function(token, channel, oldest) {
-  return api.channelsHistory(token, channel, oldest, function(e, results) {
+var listen = function(channel, oldest) {
+  oldest = isNaN(parseFloat(oldest)) ? undefined : parseFloat(oldest);
+  return api.channelsHistory(program.token, channel, oldest, function(e, results) {
     if (e) {
       console.error(e);
       process.exit(1);
@@ -24,21 +19,25 @@ var listen = function(token, channel, oldest) {
     var sorted = _.sortBy(results.messages, function(m) {
       return parseFloat(m.ts);
     });
-  
-    var latest = oldest; 
+
+    var latest = oldest;
     _.each(sorted, function(m) {
       latest = parseFloat(m.ts);
       console.log((m.username || m.user).green, m.text, ('(' + m.ts + ')').grey);
     });
 
     return setTimeout(function() {
-      return listen(token, channel, latest);
+      return listen(channel, latest);
     }, 30000);
   });
 };
 
-if (argv._[0] === 'listen' && argv.channel) {
-  return listen(argv.token, argv.channel);
-}
+program
+  .option('-t, --token <token>', 'set the authentication token')
 
-return process.exit(0);
+program 
+  .command('listen <channel>')
+  .description('listen to a channel')
+  .action(listen);
+
+program.parse(process.argv);

@@ -6,6 +6,7 @@ var _ = require('lodash'),
   async = require('async'),
   program = require('commander'),
   api = require('../lib/api'),
+  moment = require('moment'),
   colors = require('colors');
 
 process.title = 'slk';
@@ -16,6 +17,21 @@ var listenById = function(channel, users, oldest) {
       return post.username;
     }
     return users[post.user];
+  };
+
+  var what = function(post) {
+    var ret = post.text || '';
+
+    _.each(post.attachments, function(a) {
+      ret += a.text;
+    });
+
+    return ret;
+  }; 
+
+  var when = function(post) {
+    var m = moment(Math.round(post.ts) * 1000);
+    return m.format('Do MMM HH:mm');
   };
 
   return api.channelsHistory(program.token, channel, oldest, function(e, results) {
@@ -30,7 +46,8 @@ var listenById = function(channel, users, oldest) {
     var latest = oldest;
     _.each(sorted, function(m) {
       latest = parseFloat(m.ts);
-      console.log(who(m).green, m.text, ('(' + m.ts + ')').grey);
+      console.log(who(m).green, ('(' + when(m) + ')').grey);
+      console.log(what(m));
     });
 
     return setTimeout(function() {

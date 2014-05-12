@@ -3,14 +3,21 @@
 'use strict';
 
 var _ = require('lodash'),
+  async = require('async'),
   program = require('commander'),
   api = require('../lib/api'),
   colors = require('colors');
 
 process.title = 'slk';
 
-var listen = function(channel, oldest) {
-  oldest = isNaN(parseFloat(oldest)) ? undefined : parseFloat(oldest);
+var listenById = function(channel, users, oldest) {
+  var who = function(post) {
+    if(post.username) {
+      return post.username;
+    }
+    return users[post.user];
+  };
+
   return api.channelsHistory(program.token, channel, oldest, function(e, results) {
     if (e) {
       console.error(e);
@@ -23,19 +30,41 @@ var listen = function(channel, oldest) {
     var latest = oldest;
     _.each(sorted, function(m) {
       latest = parseFloat(m.ts);
-      console.log((m.username || m.user).green, m.text, ('(' + m.ts + ')').grey);
+      console.log(who(m).green, m.text, ('(' + m.ts + ')').grey);
     });
 
     return setTimeout(function() {
-      return listen(channel, latest);
+      return listenById(channel, users, latest);
     }, 30000);
   });
+};
+
+var listen = function(name) {
+
+  var getChannelId = function(cb) {
+    return api.getChannelId(program.token, name, cb);
+  };
+
+  var getUsers = function(cb) {
+    return api.usersList(program.token, cb);
+  }
+
+  var startListening = function(e, results) {
+    if(e) {
+      console.error(e);
+      return process.exit(1);
+    }
+    
+    return listenById(results[0], results[1]);
+  }
+
+  return async.parallel([getChannelId, getUsers], startListening);
 };
 
 program
   .option('-t, --token <token>', 'set the authentication token')
 
-program 
+program
   .command('listen <channel>')
   .description('listen to a channel')
   .action(listen);

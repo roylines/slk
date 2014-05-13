@@ -13,10 +13,10 @@ process.title = 'slk';
 
 var listenById = function(channel, users, oldest) {
   var who = function(post) {
-    if(post.username) {
+    if (post.username) {
       return post.username;
     }
-    if(post.user) {
+    if (post.user) {
       return users[post.user] || post.user;
     }
 
@@ -31,7 +31,7 @@ var listenById = function(channel, users, oldest) {
     });
 
     return ret;
-  }; 
+  };
 
   var when = function(post) {
     var m = moment(Math.round(post.ts) * 1000);
@@ -52,6 +52,7 @@ var listenById = function(channel, users, oldest) {
       latest = parseFloat(m.ts);
       console.log(who(m).green, ('(' + when(m) + ')').grey);
       console.log(what(m));
+      console.log();
     });
 
     return setTimeout(function() {
@@ -71,15 +72,32 @@ var listen = function(name) {
   }
 
   var startListening = function(e, results) {
-    if(e) {
+    if (e) {
       console.error(e);
       return process.exit(1);
     }
-    
+
     return listenById(results[0], results[1]);
   }
 
   return async.parallel([getChannelId, getUsers], startListening);
+};
+
+var post = function(name, user, message) {
+  return api.getChannelId(program.token, name, function(e, channel) {
+    if (e) {
+      console.error('failed to send message', e);
+      return process.exit(1);
+    }
+
+    return api.chatPostMessage(program.token, channel, user, message, function(e) {
+      if (e) {
+        console.error('failed to send message', e);
+        return process.exit(1);
+      }
+      return process.exit(0);
+    });
+  });
 };
 
 program
@@ -89,5 +107,10 @@ program
   .command('listen <channel>')
   .description('listen to a channel')
   .action(listen);
+
+program
+  .command('post <channel> <username> <message>')
+  .description('post to a channel')
+  .action(post);
 
 program.parse(process.argv);

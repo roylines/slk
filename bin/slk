@@ -16,7 +16,11 @@ var listenById = function(channel, users, oldest) {
     if(post.username) {
       return post.username;
     }
-    return users[post.user];
+    if(post.user) {
+      return users[post.user] || post.user;
+    }
+
+    return 'UNKNOWN';
   };
 
   var what = function(post) {
